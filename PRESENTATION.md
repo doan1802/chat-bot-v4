@@ -100,9 +100,9 @@
 - Authentication middleware
 
 **Database:** Supabase Project 1
-- `users` table
-- `auth.users` table
-- `sessions` table
+- `profile` table
+- `setting` table
+
 
 ### 💬 Chat Service
 **Chức năng:**
@@ -114,7 +114,6 @@
 **Database:** Supabase Project 2
 - `chats` table
 - `messages` table
-- `chat_participants` table
 
 ### 🎤 Voice Service
 **Chức năng:**
