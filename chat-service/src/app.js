@@ -118,31 +118,17 @@ app.use('/api/chats', (req, res, next) => {
   next();
 });
 
-// Middleware để giới hạn số lượng request đồng thời
-const activeRequests = new Map();
-const MAX_CONCURRENT_REQUESTS = 100; // Giới hạn số lượng request đồng thời
-
-app.use((req, res, next) => {
-  const clientIp = req.ip || req.connection.remoteAddress;
-  const currentRequests = activeRequests.get(clientIp) || 0;
-
-  if (currentRequests >= MAX_CONCURRENT_REQUESTS) {
-    return res.status(429).json({ error: 'Too many requests. Please try again later.' });
-  }
-
-  activeRequests.set(clientIp, currentRequests + 1);
-
-  res.on('finish', () => {
-    const updatedRequests = activeRequests.get(clientIp) - 1;
-    if (updatedRequests <= 0) {
-      activeRequests.delete(clientIp);
-    } else {
-      activeRequests.set(clientIp, updatedRequests);
-    }
-  });
-
-  next();
+// Simplified rate limiting - remove complex concurrent tracking
+const rateLimit = require('express-rate-limit');
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: { error: 'Too many requests. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
+
+app.use(limiter);
 
 // Middleware để quản lý phiên chat
 app.use('/api/chats/:chatId/messages', (req, res, next) => {

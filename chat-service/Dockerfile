@@ -1,19 +1,5 @@
-# Production Dockerfile for Docker
-FROM node:18-alpine AS builder
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
-
-# Copy source code
-COPY . .
-
-# Production stage
-FROM node:18-alpine AS production
+# Optimized Production Dockerfile with Cluster Support
+FROM node:18-alpine
 
 # Install curl for health checks
 RUN apk add --no-cache curl
@@ -23,17 +9,31 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
 WORKDIR /app
 
-# Copy from builder
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
-COPY --from=builder --chown=nodejs:nodejs /app/src ./src
+# Copy package files first for better caching
+COPY package*.json ./
+
+# Install dependencies with optimizations
+RUN npm ci --only=production --silent && \
+    npm cache clean --force && \
+    rm -rf /tmp/*
+
+# Copy source code
+COPY --chown=nodejs:nodejs ./src ./src
+
+# Set NODE_ENV for production optimizations
+ENV NODE_ENV=production
+# Tăng memory cho cluster mode (master + workers)
+ENV NODE_OPTIONS="--max-old-space-size=768"
+# Default cluster workers (có thể override từ docker-compose)
+ENV CLUSTER_WORKERS=2
 
 USER nodejs
 
 EXPOSE 3004
 
-# Docker health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+# Health check tối ưu cho cluster
+HEALTHCHECK --interval=20s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:3004/health || exit 1
 
+# Sử dụng node thay vì pm2 để tránh overhead
 CMD ["node", "src/server.js"]

@@ -63,6 +63,7 @@ services:
       - SUPABASE_ANON_KEY=${CHAT_SUPABASE_ANON_KEY:-your-chat-supabase-key}
       - USER_SERVICE_URL=http://user-service:3001
       - REDIS_URL=redis://redis:6379
+      - CLUSTER_WORKERS=2  # Tối ưu cho container: 2 workers per instance
       - GEMINI_API_KEY=${GEMINI_API_KEY:-your-gemini-key}
     networks:
       - chatbot-network
@@ -72,14 +73,14 @@ services:
       redis:
         condition: service_healthy
     deploy:
-      replicas: 2  # Chạy 1 instance
+      replicas: 3 # Tăng lên 3 instances để xử lý load
       resources:
         limits:
-          memory: 512M
-          cpus: '1.0'
+          memory: 1024M  # Tăng memory limit
+          cpus: '2.0'    # Tăng CPU limit
         reservations:
-          memory: 256M
-          cpus: '0.5'
+          memory: 512M   # Tăng memory reservation
+          cpus: '1.0'    # Tăng CPU reservation
 
   # Voice Service
   voice-service:
