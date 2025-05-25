@@ -87,7 +87,7 @@ services:
     build:
       context: ./voice-service
       dockerfile: Dockerfile
-    container_name: chatbot-voice-service
+    # Removed container_name to allow scaling
     restart: unless-stopped
     environment:
       - NODE_ENV=production
@@ -114,7 +114,7 @@ services:
     build:
       context: ./api-gateway
       dockerfile: Dockerfile
-    container_name: chatbot-api-gateway
+    # Removed container_name to allow scaling
     restart: unless-stopped
     environment:
       - NODE_ENV=production
@@ -147,7 +147,7 @@ services:
       dockerfile: Dockerfile
       args:
         - NEXT_PUBLIC_API_URL=http://localhost:8080
-    container_name: chatbot-frontend
+    # Removed container_name to allow scaling
     restart: unless-stopped
     environment:
       - NODE_ENV=production

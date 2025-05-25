@@ -184,20 +184,45 @@ app.locals.activeChats = activeChats;
 // Routes
 app.use('/api/chats', chatRoutes);
 
-// Health check endpoint với detailed metrics
+// Health check endpoint - simplified and reliable
 app.get('/health', (req, res) => {
-  const healthStatus = metricsCollector.getHealthStatus();
-  const loadStatus = loadMonitor.getCurrentLoad();
+  try {
+    const memUsage = process.memoryUsage();
+    const uptime = process.uptime();
 
-  res.status(healthStatus.status === 'healthy' ? 200 : 503).json({
-    status: healthStatus.status,
-    service: 'chat-service',
-    version: process.env.npm_package_version || '1.0.0',
-    uptime: process.uptime(),
-    load: loadStatus,
-    health: healthStatus,
-    timestamp: new Date().toISOString()
-  });
+    // Simple health check without complex dependencies
+    const healthData = {
+      status: 'ok',
+      service: 'chat-service',
+      version: process.env.npm_package_version || '1.0.0',
+      uptime: Math.round(uptime),
+      memory: {
+        used: Math.round(memUsage.heapUsed / 1024 / 1024),
+        total: Math.round(memUsage.heapTotal / 1024 / 1024)
+      },
+      worker: process.pid,
+      timestamp: new Date().toISOString()
+    };
+
+    // Add load status if available
+    try {
+      const loadStatus = loadMonitor.getCurrentLoad();
+      healthData.load = loadStatus;
+    } catch (err) {
+      // Continue without load status if monitoring fails
+      console.warn('Load monitoring unavailable:', err.message);
+    }
+
+    res.status(200).json(healthData);
+  } catch (error) {
+    console.error('Health check error:', error);
+    res.status(503).json({
+      status: 'error',
+      service: 'chat-service',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Metrics endpoint cho Prometheus

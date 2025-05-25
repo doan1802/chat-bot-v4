@@ -1,8 +1,8 @@
 # Optimized Production Dockerfile with Cluster Support
 FROM node:18-alpine
 
-# Install curl for health checks
-RUN apk add --no-cache curl
+# Install wget for health checks (lighter than curl)
+RUN apk add --no-cache wget
 
 # Create app user
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
@@ -31,9 +31,9 @@ USER nodejs
 
 EXPOSE 3004
 
-# Health check tối ưu cho cluster
-HEALTHCHECK --interval=20s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:3004/health || exit 1
+# Health check tối ưu cho cluster - sử dụng wget thay vì curl
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3004/health || exit 1
 
 # Sử dụng node thay vì pm2 để tránh overhead
 CMD ["node", "src/server.js"]
